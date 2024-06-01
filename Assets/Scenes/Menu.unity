@@ -319,6 +319,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scenesToMute:
   - Level
+  - Level2
 --- !u!1 &308031446
 GameObject:
   m_ObjectHideFlags: 0
