@@ -3,40 +3,43 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditorInternal;
 using UnityEngine;
-public class PlayerController : MonoBehaviour
-{   
-    // Components
-                     private Animator anim;
-                     private Rigidbody2D rb;
+using TMPro; 
 
+public class PlayerController : MonoBehaviour
+{
+    // Components
+    [SerializeField] private GameObject livesPanel;
+    private Animator anim;
+    private Rigidbody2D rb;
+    private SceneTransition sceneTransition; // Ссылка на компонент SceneTransition
     [Header("- Move Info")]
     [SerializeField] float moveSpeed = 10f;
-                     private bool canDoubleJump;
-                     private bool canMove = true;
+    private bool canDoubleJump;
+    private bool canMove = true;
 
     [Header("- Jump")]
     [SerializeField] float jumpForce = 15f;
     [SerializeField] float doubleJumpForce = 13f;
-    [SerializeField] Vector2 jumpDirection = new Vector2(5,15);
+    [SerializeField] Vector2 jumpDirection = new Vector2(5, 15);
     [SerializeField] private float jumpBufferTime;
-                     private float jumpBufferTimer;
+    private float jumpBufferTimer;
 
     [Header("- Cayote Jump")]
     [SerializeField] private float cayoteJumpTime;
-                     private float cayoteJumpTimer;
-                     private bool canHaveCayoteJump;
+    private float cayoteJumpTimer;
+    private bool canHaveCayoteJump;
 
     [Header("- Collision Info")]
     // Wall
     [SerializeField] private LayerMask whatIsWall;
     [SerializeField] private float wallCheckDistance;
-                     private bool isOnWall;
-                     private bool canWallSlide;
-                     private bool isWallSliding;
+    private bool isOnWall;
+    private bool canWallSlide;
+    private bool isWallSliding;
     // Ground
     [SerializeField] private LayerMask whatIsGround;
     [SerializeField] private float groundCheckDistance;
-                     private bool isGrounded;
+    private bool isGrounded;
     // Enemy
     [SerializeField] private Transform enemyCheck;
     [SerializeField] private float enemyCheckRadius;
@@ -51,12 +54,19 @@ public class PlayerController : MonoBehaviour
     private bool isKnocked;
     private bool canBeKnocked = true;
 
+    [Header("- Lives")]
+    [SerializeField] private int maxLives = 5;
+    private int currentLives;
+    [SerializeField] private TextMeshProUGUI livesText; // TextMeshProUGUI для отображения жизней
+
     void Start()
     {
+        sceneTransition = FindObjectOfType<SceneTransition>();
         SetupInitialComponents();
         SetupInitialSettings();
+        currentLives = maxLives;
+        UpdateLivesUI();
     }
-
 
     void Update()
     {
@@ -94,7 +104,6 @@ public class PlayerController : MonoBehaviour
                 canHaveCayoteJump = false;
                 cayoteJumpTimer = cayoteJumpTime;
             }
-
         }
 
         if (canWallSlide)
@@ -106,8 +115,6 @@ public class PlayerController : MonoBehaviour
         HandleMove();
     }
 
-
-
     private void AnimationController()
     {
         anim.SetBool("isMoving", GetXVelocityAxis() != 0);
@@ -115,8 +122,6 @@ public class PlayerController : MonoBehaviour
         anim.SetBool("isGrounded", isGrounded);
         anim.SetBool("isWallSliding", isWallSliding);
         anim.SetBool("isKnocked", isKnocked);
-
-
     }
 
     private float GetXVelocityAxis(){
@@ -124,11 +129,9 @@ public class PlayerController : MonoBehaviour
     }
 
     private void InputChecks() {
-
         if (Input.GetKeyDown(KeyCode.R)) {
             Flip();
         }
-
         if (Input.GetKeyDown(KeyCode.Space)){
             OnJump();
         }
@@ -156,10 +159,9 @@ public class PlayerController : MonoBehaviour
     {
         if (facingRight && rb.velocity.x < 0) {
             Flip();
-        }else if (!facingRight && rb.velocity.x > 0) {
+        } else if (!facingRight && rb.velocity.x > 0) {
             Flip();
         }
-
     }
 
     private void Flip()
@@ -169,16 +171,14 @@ public class PlayerController : MonoBehaviour
         transform.Rotate(0,180,0);
     }
 
-
     private void OnJump(){ 
-
         if (!isGrounded)
             jumpBufferTimer = jumpBufferTime;
 
         if (isWallSliding)
         {
             WallJump();
-            canDoubleJump= true;
+            canDoubleJump = true;
         }
         else if (isGrounded || cayoteJumpTimer > 0)
         {
@@ -218,14 +218,44 @@ public class PlayerController : MonoBehaviour
 
         rb.velocity = new Vector2(knockbackDirection.x * hDirection, knockbackDirection.y);
         
-        Invoke("CancelKnockback",0.5f);
+        Invoke("CancelKnockback", 0.5f);
         Invoke("AllowKnockback", invincibilityDuration);
 
+        // Уменьшаем количество жизней
+        LoseLife();
+    }
+
+    private void LoseLife()
+    {
+        currentLives--;
+        UpdateLivesUI();
+        StartCoroutine(FlashRed());
+
+        if (currentLives <= 0)
+        {
+           livesPanel.SetActive(false);
+            sceneTransition.LoadScene("Lose");
+        }
+    }
+   private IEnumerator FlashRed()
+{
+    Color originalColor = livesText.color;
+    livesText.color = Color.red;
+    yield return new WaitForSeconds(0.25f);
+    livesText.color = originalColor;
+}
+
+    private void UpdateLivesUI()
+    {
+        if (livesText != null)
+        {
+            livesText.text = currentLives.ToString();
+        }
     }
 
     private void CancelKnockback()
     {
-        isKnocked= false;
+        isKnocked = false;
     }
 
     private void AllowKnockback()
@@ -246,7 +276,6 @@ public class PlayerController : MonoBehaviour
 
     private void CheckWallCollision()
     {
-        // Checks if wall detected depending on the facing direction
         isOnWall = Physics2D.Raycast(transform.position, Vector2.right * facingDirection, wallCheckDistance, whatIsWall);
         canWallSlide = CheckIfCanWallSlide();
         isWallSliding = canWallSlide;
@@ -273,7 +302,6 @@ public class PlayerController : MonoBehaviour
         {
             if (enemy.GetComponent<Enemy>() != null)
             {
-
                 Enemy newEnemy = enemy.GetComponent<Enemy>();
 
                 if (newEnemy.invincible) {
@@ -287,7 +315,6 @@ public class PlayerController : MonoBehaviour
                     canDoubleJump = true;
                     newEnemy.Damaged();
                 }
-                
             }
         }
     }
@@ -300,13 +327,11 @@ public class PlayerController : MonoBehaviour
 
     private void SetupInitialSettings()
     {
-        // Freezez rotation / roll cause of Z axis.
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-
     }
 
     private void OnDrawGizmos() {
-        Gizmos.DrawLine(transform.position,new Vector3(transform.position.x, transform.position.y - groundCheckDistance));
+        Gizmos.DrawLine(transform.position, new Vector3(transform.position.x, transform.position.y - groundCheckDistance));
         Gizmos.DrawLine(transform.position, new Vector3(transform.position.x + wallCheckDistance * facingDirection, transform.position.y));
         Gizmos.DrawWireSphere(enemyCheck.position, enemyCheckRadius);
     }
