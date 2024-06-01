@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEditorInternal;
 using UnityEngine;
 using TMPro; 
-
+using UnityEngine.SceneManagement; 
 public class PlayerController : MonoBehaviour
 {
     // Components
@@ -56,15 +56,23 @@ public class PlayerController : MonoBehaviour
 
     [Header("- Lives")]
     [SerializeField] private int maxLives = 5;
-    private int currentLives;
+    public int currentLives;
     [SerializeField] private TextMeshProUGUI livesText; // TextMeshProUGUI для отображения жизней
 
     void Start()
     {
-        sceneTransition = FindObjectOfType<SceneTransition>();
+        if (PlayerPrefs.HasKey("lives") && SceneManager.GetActiveScene().name != "Level")
+        {
+            currentLives = PlayerPrefs.GetInt("lives");
+        }
+        else
+        {
+            currentLives = maxLives;
+        }
+               sceneTransition = FindObjectOfType<SceneTransition>();
         SetupInitialComponents();
         SetupInitialSettings();
-        currentLives = maxLives;
+        
         UpdateLivesUI();
     }
 

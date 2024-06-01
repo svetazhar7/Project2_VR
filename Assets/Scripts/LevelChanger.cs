@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 public class LevelChanger : MonoBehaviour
 {
     public string nextSceneName; // Название сцены, на которую нужно переключиться
@@ -27,6 +27,8 @@ public class LevelChanger : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
+            int yourNumber = FindObjectOfType<PlayerController>().currentLives;
+            PlayerPrefs.SetInt("lives", yourNumber);
 
             if (sceneTransition != null)
             {
