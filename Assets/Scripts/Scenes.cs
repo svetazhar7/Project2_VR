@@ -9,6 +9,12 @@ public class SceneChanger : MonoBehaviour
 	{
 		SceneManager.LoadScene(sceneName);
 	}
+	  public void ChangeScene2(string sceneName)
+    {
+        // Возобновляем время перед загрузкой новой сцены
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(sceneName);
+    }
 	public void Exit()
 	{
 		Application.Quit ();
